@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+        <h1>NEWS</h1>
+        <form action="/getnews/all_articles" method="POST">
+            <label >Keyword:</label>
+            <input type="text" value="trump" name="q">
+            <label >Source:</label>
+            <select name="sources">
+                <option value="bbc-news">bbc-news</option>
+            </select>
+            <label >Domain(s):</label>
+            <input type="text" name="domains" value="bbc.co.uk">
+            <label >From:</label>
+            <input type="date" name="from_param" value="2019-08-01">
+            <label >To:</label>
+            <input type="date" name="to" value="2019-08-01"   >     
+            <input type="submit">                               
+        </form>        
+        {% if news %}
+            {% for article in news['articles'] %}
+                {{ article['title'] }} 
+                <br>   
+                <img src={{ article['urlToImage'] }} alt="" width="300">
+                <br>
+            {% endfor %}
+        {% endif %}
+
+{% endblock content %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Index.html</h1>
+    <h4>your options</h4>
+    <ol>
+        <li><a href="/getnews/top_headlines">News</a></li>
+        <li><a href="/sqlinput">Exec SQL</a></li>
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+        <li><a href="{{ url_for('register') }}">Register</a></li>
+
+    </ol>
+{% endblock content %}
