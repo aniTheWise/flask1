@@ -32,3 +32,16 @@ class LoginForm(FlaskForm):
     remember = BooleanField('Remember Me')
 
     submit = SubmitField('Login')  
+
+
+
+class AddToDoForm(FlaskForm):
+    thingtodo = StringField('To Do Item', 
+                            validators=[DataRequired()])
+
+    submit = SubmitField('Add')
+
+    def validate_thingtodo(self, thingtodo):
+        todoentry = todolist.query.filter_by(thingtodo=thingtodo.data).first()
+        if todoentry:
+            raise ValidationError('Duplicate entry')

@@ -11,6 +11,7 @@ from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 #----------------------------------------------------------------------------------------
 #standard libray imports
 from datetime import date
+from datetime import datetime
 #----------------------------------------------------------------------------------------
 #Ani specfic imports
 import sqlite3
@@ -48,6 +49,16 @@ class User(dba.Model, UserMixin):
 
 #    def __repr__(self):
 #        return "User('{}', '{}', '{}')".format(self.id, self.username, self.password)
+
+class todolist(dba.Model):
+    id = dba.Column(dba.Integer, primary_key=True)
+    thingtodo = dba.Column(dba.String(50), nullable=False)
+    created = dba.Column(dba.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self):
+        return "todolist(#id:{}\nentry:{}\ndate:{})\n".format(self.id, self.thingtodo, self.created)
+
+
 #----------------------------------------------------------------------------------------
 
 #forms
@@ -80,6 +91,21 @@ class LoginForm(FlaskForm):
     remember = BooleanField('Remember Me')
 
     submit = SubmitField('Login')  
+
+
+class AddToDoForm(FlaskForm):
+    thingtodo = StringField('To Do Item', 
+                            validators=[DataRequired()])
+
+    submit = SubmitField('Add')
+
+    def validate_thingtodo(self, thingtodo):
+        todoentry = todolist.query.filter_by(thingtodo=thingtodo.data).first()
+        if todoentry:
+            raise ValidationError('Duplicate entry')
+
+
+
 #----------------------------------------------------------------------------------------
 
 
@@ -212,6 +238,20 @@ def account():
     return render_template('account.html', title="Account")
 
 
+
+@app.route('/todo', methods=['GET', 'POST'])
+def todo():
+    form = AddToDoForm()
+
+    if request.method == 'POST':
+        new_todo = todolist(thingtodo=form.thingtodo.data)
+        dba.session.add(new_todo)
+        dba.session.commit()
+        flash('To Do List updated!', 'success')
+        return redirect(url_for('todo'))
+    #else
+    todo_list = todolist.query.all()
+    return render_template('todo.html', title="TO-DO List", todo_list=todo_list, form=form)
 #----------------------------------------------------------------------------------------
 
 #app run
