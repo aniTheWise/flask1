@@ -3,26 +3,26 @@
 {% block content %}
 
 <h1>To Do List</h1>
+<hr>
+<form action="" method="POST">
+    <fieldset>
+        {{ form.thingtodo.label }}
+        {{ form.thingtodo }}
+    </fieldset>
+
+    <div>
+        {{ form.submit }}
+    </div>
+</form>
+<hr>
 <ol>
     {% for i in todo_list %}
         <li>{{ i.thingtodo }}  {{ i.created }}</li>
     {% endfor %}
 </ol>
+<hr>
 
 
-<form action="" method="POST">
-    <fieldset>
-        {{ form.thingtodo.label }}
-        {{ form.thingtodo }}
-        
-    </fieldset>
-
-    <div>
-        {{ form.submit }}
-
-    </div>
-
-</form>
 
 
 

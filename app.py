@@ -240,6 +240,7 @@ def account():
 
 
 @app.route('/todo', methods=['GET', 'POST'])
+@login_required
 def todo():
     form = AddToDoForm()
 
