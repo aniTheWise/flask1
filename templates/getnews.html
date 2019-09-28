@@ -1,28 +1,66 @@
 {% extends 'base.html' %}
 {% block content %}
-        <h1>NEWS</h1>
-        <form action="/getnews/all_articles" method="POST">
+    <h1>NEWS</h1>
+    <form action="/getnews/all_articles" method="POST">
+        <div class="form-group">
             <label >Keyword:</label>
-            <input type="text" value="trump" name="q">
-            <label >Source:</label>
-            <select name="sources">
-                <option value="bbc-news">bbc-news</option>
-            </select>
-            <label >Domain(s):</label>
-            <input type="text" name="domains" value="bbc.co.uk">
-            <label >From:</label>
-            <input type="date" name="from_param" value="2019-08-01">
-            <label >To:</label>
-            <input type="date" name="to" value="2019-08-01"   >     
-            <input type="submit">                               
-        </form>        
-        {% if news %}
-            {% for article in news['articles'] %}
-                {{ article['title'] }} 
-                <br>   
-                <img src={{ article['urlToImage'] }} alt="" width="300">
-                <br>
-            {% endfor %}
-        {% endif %}
+            <input class="form-control" type="text" value="trump" name="q">
+        </div>
 
+        <div class="row">
+            <div class="col">
+                <label >Source:</label>
+                <select name="sources" class="form-control">
+                    <option value="bbc-news">bbc-news</option>
+                </select>            
+            </div>
+            <div class="col">
+                <label >Domain(s):</label>
+                <input class="form-control" type="text" name="domains" value="bbc.co.uk">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <label >From:</label>
+                <input class="form-control" type="date" name="from_param" value="2019-08-01">
+            </div>         
+            <div class="col">
+                <label >To:</label>
+                <input class="form-control" type="date" name="to" value="2019-08-01"   > 
+            </div>  
+        </div>
+        <br>
+        <button type="submit" class="btn btn-primary">Search</button> 
+        
+
+    </form>     
+    <hr>
+
+    {% for index, article in news %}
+        {% if index % 3 == 0 %}
+            <div class="row">
+        {% endif %}
+            <div class="col-md-4">
+                <div class="card">
+                    <img src="{{ article['urlToImage'] }}" class="card-img-top" alt="...">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ article['url'] }}">
+                                {{ article['title'] }}
+                            </a>
+                        </h5>
+                        <p class="card-text">
+                            <span>Source: {{ article['source']['name'] }}</span> <br>
+                            <span>Published: {{ article['publishedAt'].strftime('%Y-%m-%d | %H:%M') }}</span> 
+                        </p>
+                    </div>
+                </div>    
+            </div>
+        {% if index % 3 == 2 %}
+            </div>
+        {% endif %}
+    {% endfor %}        
+
+    <br><br><br>
 {% endblock content %}

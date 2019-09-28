@@ -1,29 +1,45 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<h1>To Do List</h1>
 <hr>
-<form action="" method="POST">
-    <fieldset>
-        {{ form.thingtodo.label }}
-        {{ form.thingtodo }}
-    </fieldset>
+<div class="list-group-item active">
+    <form action="" method="POST">
+                <div class="form-row">
+                    <div class="col-auto">
+                        {{ form.thingtodo.label(class="form-control-label") }}
+                    </div>
+                    <div class="col">
+                            {{ form.thingtodo(class="form-control") }}
+                    </div>
+                    <div class="col-auto">
+                        {{ form.submit(class="btn btn-outline-light form-control") }}                    
 
-    <div>
-        {{ form.submit }}
-    </div>
-</form>
-<hr>
-<ol>
-    {% for i in todo_list %}
-        <li>{{ i.thingtodo }}  {{ i.created }}</li>
-    {% endfor %}
-</ol>
-<hr>
+                    </div>
+                </div>
 
 
+        </form>
+</div>
 
+<br>
+{% if todo_list %}
+        {% for i in todo_list %}
+            <li class="clearfix list-group-item">
+                <span class="float-left">
+                    {{ i.thingtodo }}
+                    <br>
+                    {{ i.created.date() }} | {{ i.created.strftime("%H:%M") }}
+                </span>
 
+                <span class="float-right">
+                    <a href="" class="btn btn-outline-info">Delete</a>
+                </span>
 
+            </li>
+        {% endfor %}
+    <hr>
+
+{% else %}
+    <div>There is nothing on your To Do List</div>
+{% endif %}
 {% endblock content %}

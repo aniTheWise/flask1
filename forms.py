@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, BooleanField, PasswordField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError 
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Email 
+# from app import current_user
 #from app import User
 
 class RegistrationForm(FlaskForm):
@@ -45,3 +46,30 @@ class AddToDoForm(FlaskForm):
         todoentry = todolist.query.filter_by(thingtodo=thingtodo.data).first()
         if todoentry:
             raise ValidationError('Duplicate entry')
+
+
+class UpdateAccountForm(FlaskForm):
+    username = StringField('Username', 
+                            validators=[DataRequired(), Length(min=2, max=20)])
+
+    email = StringField('Email', 
+                         validators=[Email(), Length(min=7, max=120)])
+    
+    submit = SubmitField('Update')
+
+    def validate_username(self, username):
+        if username.data == current_user.username:
+            pass
+        else:
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError('Username is already taken! Please try another.')
+
+    def validate_email(self, email):
+        if email.data == current_user.email:
+            pass
+        else:
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('Email is already taken! Please try another.')
+

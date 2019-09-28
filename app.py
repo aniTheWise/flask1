@@ -7,11 +7,12 @@ from flask_login import LoginManager, UserMixin, login_user, current_user, logou
 #forms imports 
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, BooleanField, PasswordField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError 
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Email 
 #----------------------------------------------------------------------------------------
 #standard libray imports
 from datetime import date
 from datetime import datetime
+import json
 #----------------------------------------------------------------------------------------
 #Ani specfic imports
 import sqlite3
@@ -46,18 +47,46 @@ class User(dba.Model, UserMixin):
     username = dba.Column(dba.String(20), unique=True, nullable=False)
     password = dba.Column(dba.String(60), nullable=False)
     email = dba.Column(dba.String(120), nullable=True)
+    
+    things_to_do = dba.relationship('todolist', backref='owner', lazy=True)
 
-#    def __repr__(self):
-#        return "User('{}', '{}', '{}')".format(self.id, self.username, self.password)
+    def __repr__(self):
+        return "User('{}', '{}', '{}')".format(self.username, self.email, self.things_to_do)
 
 class todolist(dba.Model):
     id = dba.Column(dba.Integer, primary_key=True)
     thingtodo = dba.Column(dba.String(50), nullable=False)
-    created = dba.Column(dba.DateTime, nullable=False, default=datetime.utcnow)
+    created = dba.Column(dba.DateTime, nullable=False, default=datetime.now)
+
+    user_id = dba.Column(dba.Integer, dba.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
-        return "todolist(#id:{}\nentry:{}\ndate:{})\n".format(self.id, self.thingtodo, self.created)
+        return "todolist(thingtodo='{}', user_id='{}'".format(self.thingtodo, self.user_id)
 
+class UpdateAccountForm(FlaskForm):
+    username = StringField('Username', 
+                            validators=[DataRequired(), Length(min=2, max=20)])
+
+    email = StringField('Email', 
+                         validators=[Email(), Length(min=7, max=120)])
+    
+    submit = SubmitField('Update')
+
+    def validate_username(self, username):
+        if username.data == current_user.username:
+            pass
+        else:
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError('Username is already taken! Please try another.')
+
+    def validate_email(self, email):
+        if email.data == current_user.email:
+            pass
+        else:
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('Email is already taken! Please try another.')
 
 #----------------------------------------------------------------------------------------
 
@@ -105,6 +134,31 @@ class AddToDoForm(FlaskForm):
             raise ValidationError('Duplicate entry')
 
 
+class UpdateAccountForm(FlaskForm):
+    username = StringField('Username', 
+                            validators=[DataRequired(), Length(min=2, max=20)])
+
+    email = StringField('Email', 
+                         validators=[Email()])
+    
+    submit = SubmitField('Update')
+
+    def validate_username(self, username):
+        if username.data == current_user.username:
+            pass
+        else:
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError('Username is already taken! Please try another.')
+
+    def validate_email(self, email):
+        if email.data == current_user.email:
+            pass
+        else:
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('Email is already taken! Please try another.')
+
 
 #----------------------------------------------------------------------------------------
 
@@ -112,6 +166,7 @@ class AddToDoForm(FlaskForm):
 #routes
 @app.route('/')
 def index():
+    # return redirect(url_for('todo'))
     return render_template('index.html')
 
 @app.route('/sqlinput')
@@ -186,8 +241,23 @@ def getnews(in_type):
                                           country='in')
     else:
         return 'no clue man'
-    print(all_articles)
-    return render_template('getnews.html', news=all_articles)
+    # print(type(all_articles))
+    # print(all_articles['articles'][0]['publishedAt'])
+    # print(type(all_articles['articles'][0]['publishedAt']))
+    # n=all_articles['articles'][0]['publishedAt']
+
+    if all_articles:
+        for each in all_articles['articles']:
+            n = each['publishedAt']
+            each['publishedAt'] = datetime( int(n[:4]),
+                                            int(n[5:7]),
+                                            int(n[8:10]),
+                                            hour=int(n[11:13]),
+                                            minute=int(n[14:16]), 
+                                            second=int(n[17:19]))
+                                        
+
+    return render_template('getnews.html', news=enumerate(all_articles['articles']))
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
@@ -232,10 +302,26 @@ def logout():
 
 
 
-@app.route('/account')
+@app.route('/account', methods=["GET", "POST"])
 @login_required
 def account():
-    return render_template('account.html', title="Account")
+    form = UpdateAccountForm()
+    #if form is submitted (POST stuff)
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        dba.session.commit()
+        flash("Account Info updated successfully!", "success")
+        return redirect(url_for('account'))
+    elif request.method == "GET":
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    # 
+    # image_file = url_for('static', filen_name='profile_pics/'+current_user.username+'.jpg')
+    #  
+    image_file = url_for('static', filename='profile_pics/default.jpg')
+    # 
+    return render_template('account.html', image_file=image_file, form=form)
 
 
 
@@ -245,14 +331,18 @@ def todo():
     form = AddToDoForm()
 
     if request.method == 'POST':
-        new_todo = todolist(thingtodo=form.thingtodo.data)
+        new_todo = todolist(thingtodo=form.thingtodo.data, user_id=current_user.id)
         dba.session.add(new_todo)
         dba.session.commit()
         flash('To Do List updated!', 'success')
         return redirect(url_for('todo'))
     #else
-    todo_list = todolist.query.all()
-    return render_template('todo.html', title="TO-DO List", todo_list=todo_list, form=form)
+    # todo_list = todolist.query.all()
+    todo_list = current_user.things_to_do
+
+    return render_template('todo.html', 
+                            title=current_user.username +"'s To-Do List", 
+                            todo_list=todo_list, form=form)
 #----------------------------------------------------------------------------------------
 
 #app run
