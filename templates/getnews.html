@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>NEWS</h1>
     <form action="/getnews/all_articles" method="POST">
         <div class="form-group">
             <label >Keyword:</label>
@@ -36,7 +35,6 @@
 
     </form>     
     <hr>
-
     {% for index, article in news %}
         {% if index % 3 == 0 %}
             <div class="row">
@@ -55,12 +53,11 @@
                             <span>Published: {{ article['publishedAt'].strftime('%Y-%m-%d | %H:%M') }}</span> 
                         </p>
                     </div>
-                </div>    
+                </div>  
             </div>
-        {% if index % 3 == 2 %}
+        {% if index % 3 == 2 or index == (num_art - 1)%}
             </div>
         {% endif %}
-    {% endfor %}        
 
-    <br><br><br>
+    {% endfor %}    
 {% endblock content %}

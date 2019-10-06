@@ -3,7 +3,7 @@
 {% block content %}
     <div id="account-page-content" class="list-group-item clearfix mt-3">
         <div id="account-image-container" class="float-left">
-            <img src="{{ image_file }}" alt="">
+            <img src="{{ image_file }}" alt="" class="rounded-circle" width="225" height="225">
         </div>
         <div id="account-information-container" class="float-left pl-4">
             <h1>{{ current_user.username }}</h1>
@@ -11,7 +11,7 @@
         </div>
     </div>
     <div class="list-group-item mt-3">
-        <form action="" method="POST">
+        <form action="" method="POST" enctype="multipart/form-data">
             {{ form.hidden_tag() }} 
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4">Account Info</legend>
@@ -39,6 +39,16 @@
                         </div>
                     {%else %}
                         {{ form.email(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.picture.label() }}
+                    {{ form.picture(class="form-control-file") }}
+                    {% if form.picture.errors %}
+                        {% for error in form.picture.errors %}
+                            <span class="text-danger">{{ error }}</span><br>
+                        {% endfor %}
+                    {%else %}
                     {% endif %}
                 </div>                    
             </fieldset>

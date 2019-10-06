@@ -3,9 +3,11 @@ from flask import Flask, render_template, request, redirect, flash, url_for, req
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
+from PIL import Image
 #----------------------------------------------------------------------------------------
 #forms imports 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, BooleanField, PasswordField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Email 
 #----------------------------------------------------------------------------------------
@@ -13,6 +15,9 @@ from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, E
 from datetime import date
 from datetime import datetime
 import json
+# import secrets
+import os, string, random
+import http.client
 #----------------------------------------------------------------------------------------
 #Ani specfic imports
 import sqlite3
@@ -49,9 +54,13 @@ class User(dba.Model, UserMixin):
     email = dba.Column(dba.String(120), nullable=True)
     
     things_to_do = dba.relationship('todolist', backref='owner', lazy=True)
+    image = dba.relationship('Images', backref='owner', lazy=True)
 
     def __repr__(self):
-        return "User('{}', '{}', '{}')".format(self.username, self.email, self.things_to_do)
+        return "User('{}', '{}', '{}', '{}')".format(self.username, 
+                                                     self.email, 
+                                                     self.things_to_do,
+                                                     self.image)
 
 class todolist(dba.Model):
     id = dba.Column(dba.Integer, primary_key=True)
@@ -61,32 +70,17 @@ class todolist(dba.Model):
     user_id = dba.Column(dba.Integer, dba.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
-        return "todolist(thingtodo='{}', user_id='{}'".format(self.thingtodo, self.user_id)
+        return "todolist(thingtodo='{}', user_id='{}'".format(self.thingtodo, 
+                                                              self.user_id)
 
-class UpdateAccountForm(FlaskForm):
-    username = StringField('Username', 
-                            validators=[DataRequired(), Length(min=2, max=20)])
-
-    email = StringField('Email', 
-                         validators=[Email(), Length(min=7, max=120)])
+class Images(dba.Model):
+    id = dba.Column(dba.Integer, primary_key=True)
+    picture_file = dba.Column(dba.String(20), nullable=True, default="default.jpg")
+    user_id = dba.Column(dba.Integer, dba.ForeignKey('user.id'), nullable=False)
     
-    submit = SubmitField('Update')
-
-    def validate_username(self, username):
-        if username.data == current_user.username:
-            pass
-        else:
-            user = User.query.filter_by(username=username.data).first()
-            if user:
-                raise ValidationError('Username is already taken! Please try another.')
-
-    def validate_email(self, email):
-        if email.data == current_user.email:
-            pass
-        else:
-            user = User.query.filter_by(email=email.data).first()
-            if user:
-                raise ValidationError('Email is already taken! Please try another.')
+    def __repr__(self):
+        return "Images(picture_file='{}', user_id='{}')".format(self.picture_file, 
+                                                                self.user_id)
 
 #----------------------------------------------------------------------------------------
 
@@ -140,6 +134,9 @@ class UpdateAccountForm(FlaskForm):
 
     email = StringField('Email', 
                          validators=[Email()])
+
+    picture = FileField('Update Profile Picture', 
+                        validators=[FileAllowed(['jpg', 'png'])])
     
     submit = SubmitField('Update')
 
@@ -158,7 +155,6 @@ class UpdateAccountForm(FlaskForm):
             user = User.query.filter_by(email=email.data).first()
             if user:
                 raise ValidationError('Email is already taken! Please try another.')
-
 
 #----------------------------------------------------------------------------------------
 
@@ -257,7 +253,11 @@ def getnews(in_type):
                                             second=int(n[17:19]))
                                         
 
-    return render_template('getnews.html', news=enumerate(all_articles['articles']))
+    return render_template('getnews.html',
+                            news=enumerate(all_articles['articles']), 
+                            num_art=len(all_articles['articles']),
+                            title="World News"
+    )
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
@@ -302,12 +302,36 @@ def logout():
 
 
 
+def save_picture(form_picture):
+    random_hex = ''.join([random.choice(string.ascii_lowercase) for x in range(8)])
+    # random_hex = secrets.token_hex(8)
+    # f_name, f_ext = os.path.splitext(form_picture.filename)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn =  random_hex + f_ext
+    picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
+    
+    #Pillow module image resizing
+    output_size = (225,225)
+    i = Image.open(form_picture)    
+    i.thumbnail(output_size)
+    i.save(picture_path)
+    # form_picture.save(picture_path)
+
+    return picture_fn
+
+
 @app.route('/account', methods=["GET", "POST"])
 @login_required
 def account():
     form = UpdateAccountForm()
     #if form is submitted (POST stuff)
     if form.validate_on_submit():
+
+        if form.picture.data:
+            picture_file = save_picture(form.picture.data)
+            image_file = Images.query.filter_by(user_id=current_user.id).first()
+            image_file.picture_file = picture_file
+
         current_user.username = form.username.data
         current_user.email = form.email.data
         dba.session.commit()
@@ -316,10 +340,14 @@ def account():
     elif request.method == "GET":
         form.username.data = current_user.username
         form.email.data = current_user.email
+    image_file = url_for('static', 
+                         filename='profile_pics/' + 
+                         Images.query.filter_by(user_id=current_user.id).first()
+                         .picture_file)    
     # 
-    # image_file = url_for('static', filen_name='profile_pics/'+current_user.username+'.jpg')
+    # image_file = url_for('static', filename='profile_pics/'+current_user.username+'.jpg')
     #  
-    image_file = url_for('static', filename='profile_pics/default.jpg')
+    # image_file = url_for('static', filename='profile_pics/default.jpg')
     # 
     return render_template('account.html', image_file=image_file, form=form)
 
@@ -343,6 +371,44 @@ def todo():
     return render_template('todo.html', 
                             title=current_user.username +"'s To-Do List", 
                             todo_list=todo_list, form=form)
+
+
+
+
+@app.route('/cb_sportradar')
+def cb_sportradar():
+
+    # import http.client
+    # api key for api.sportradar.us
+    # username: AniAni
+    # reg email: kingoftennis94...
+    # reg app: flask1
+
+    # tennis_t2_api_key = 'fkbtucsybrvwj7rg76pnvkp5'
+
+    tennis_t2_api_key = 'fkbtucsybrvwj7rg76pnvkp5'
+    
+    conn = http.client.HTTPSConnection("api.sportradar.us")
+    conn.request("GET", "/tennis-{access_level}{version}/{language_code}/schedules/{year}-{month}-{day}/results.{format}?api_key={tennis_t2_api_key}".format(
+        access_level="t",	#Production (p) or Trial (t).
+        version="2",	        #Whole number (Current Version: 2).
+        language_code="en",	#List of Supported Locales
+        year="2019",	        #Year in 4 digit format (YYYY).
+        month="10",	        #Month in 2 digit format (MM).
+        day="01",	            #Day of the month in 2 digit format (DD).
+        # live="",        	#Optional: In place of the date, substitute live for the current live results.
+        format="json",	        #xml or json.
+        tennis_t2_api_key = 'fkbtucsybrvwj7rg76pnvkp5'
+    ))
+
+    res = conn.getresponse()
+    data = res.read()
+
+    print(data.decode("utf-8"))
+
+    return data.decode("utf-8")
+
+
 #----------------------------------------------------------------------------------------
 
 #app run

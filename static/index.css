@@ -1,0 +1,13 @@
+body{
+  background-image : url("LandingPageWallpaper1.jpg");
+}
+.col-md-9{
+  background-color: greenyellow
+}
+.col-md-3{
+  background-color: lightblue;
+}
+#a{
+  /* background-color: pink; */
+  text-align: center;
+}

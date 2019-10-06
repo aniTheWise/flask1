@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% if request.endpoint == 'index' %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}" >
+    {% else %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}" >
+    {% endif %}
+
     {% if title %}
         <title>Ani App - {{ title }}</title>
     {% else %}
@@ -12,7 +18,7 @@
     {% endif %}
 </head>
 <body>
-    <nav class="navbar navbar-expand navbar-dark bg-dark">
+    <nav class="navbar navbar-expand navbar-dark bg-dark fixed-top">
         <a class="navbar-brand" href="#">AniKK</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -37,7 +43,10 @@
                 {% endif %}
               </div>
     </nav>
-    <div class="container ">
+    <div class="container">
+        <div style="margin-top: 85px">
+
+        </div>
         {% if title %}
             <h1>{{ title }}</h1>
         {% endif %}
@@ -50,8 +59,10 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        {% block content %}{% endblock %}
+
+        {% block content %}{% endblock content%}
     </div>
+
  
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

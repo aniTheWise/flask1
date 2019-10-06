@@ -1,13 +1,29 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Index.html</h1>
-    <h4>your options</h4>
-    <ol>
-        <li><a href="/getnews/top_headlines">News</a></li>
-        <li><a href="/sqlinput">Exec SQL</a></li>
-        <li><a href="{{ url_for('login') }}">Login</a></li>
-        <li><a href="{{ url_for('register') }}">Register</a></li>
+<div class="row">
+  <div class="col" id="a">
+    <div>
+      <img  src="/static/profile_pics/jkxspzbn.jpg" 
+            alt="creator_pic" 
+            id="a1" 
+            class="rounded-circle mx-auto d-block m-2">
+      <p>
+        Welcome to <strong>anirudhkk.com</strong>, feel free to explore and report bugs to improve the site!
+      </p>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-9">
+    asdasd
+  </div>
+  <div class="col-md-3">
+    asdasd
+  </div>
+</div>
 
-    </ol>
+<div class="rounded-circle">
+</div>
+
 {% endblock content %}
