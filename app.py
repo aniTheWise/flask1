@@ -1,5 +1,5 @@
 #external imports
-from flask import Flask, render_template, request, redirect, flash, url_for, request
+from flask import Flask, render_template, request, redirect, flash, url_for, request, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
@@ -374,6 +374,19 @@ def todo():
 
 
 
+@app.route('/todo/<int:todo_id>/delete', methods=['POST'])
+@login_required
+def delete_todo(todo_id):
+    todo_item = todolist.query.get_or_404(todo_id)
+    print(todo_id)
+    # if todo.author != current_user:
+    #     abort(403)
+    dba.session.delete(todo_item)
+    dba.session.commit()
+    flash('To Do item deleted!', 'info')
+    return redirect('todo')
+
+
 
 @app.route('/cb_sportradar')
 def cb_sportradar():
@@ -409,9 +422,10 @@ def cb_sportradar():
     return data.decode("utf-8")
 
 
+
 #----------------------------------------------------------------------------------------
 
 #app run
 if __name__ == '__main__':
-        app.run(host='192.168.1.9', debug=True)
+        app.run(host='192.168.1.92', debug=True)
 #----------------------------------------------------------------------------------------
